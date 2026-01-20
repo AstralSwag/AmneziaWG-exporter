@@ -103,14 +103,13 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(delta(awg_sent_bytes[$__range]))",
+          "expr": "sum(awg_sent_bytes)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "timeFrom": "now/M",
-      "title": "Traffic Summary",
+      "title": "Traffic Summary (Total)",
       "type": "gauge"
     },
     {

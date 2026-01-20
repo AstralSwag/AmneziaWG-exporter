@@ -160,7 +160,34 @@ scrape_configs:
 
 ## Grafana Dashboard
 
-Импортируйте дашборд из файла `grafana.json` в Grafana.
+Есть два варианта дашборда:
+
+1. **grafana-simple.json** - упрощенный дашборд для тестирования (рекомендуется начать с него)
+2. **grafana.json** - полный дашборд со всеми метриками
+
+Импортируйте дашборд в Grafana:
+1. Grafana UI → Dashboards → Import
+2. Загрузите файл `grafana-simple.json` или `grafana.json`
+3. Выберите ваш Prometheus datasource
+4. Нажмите Import
+
+### Если дашборд не показывает данные
+
+1. **Проверьте что метрики есть в Prometheus:**
+   - Откройте Prometheus UI (обычно http://your-server:9090)
+   - В поле запроса введите: `awg_sent_bytes`
+   - Нажмите Execute
+   - Должны появиться метрики с вашими клиентами
+
+2. **Проверьте временной диапазон:**
+   - Если данные только начали собираться, выберите "Last 5 minutes" в Grafana
+   - Функции `delta()` и `rate()` требуют минимум 2 точки данных
+
+3. **Проверьте UID datasource:**
+   - Если в дашборде ошибка "datasource not found"
+   - Откройте `grafana.json` или `grafana-simple.json`
+   - Замените `"uid": "prometheus"` на UID вашего datasource
+   - Или при импорте выберите нужный datasource из списка
 
 ## Порт
 
