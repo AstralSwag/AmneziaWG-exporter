@@ -14,7 +14,7 @@ fi
 
 # Установка зависимостей
 echo "Установка зависимостей Python..."
-pip3 install prometheus-client
+pip3 install prometheus-client --break-system-packages # Without venv
 
 # Создание директории
 echo "Создание директории /opt/awg-exporter..."
