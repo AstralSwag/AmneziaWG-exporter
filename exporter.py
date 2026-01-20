@@ -46,14 +46,18 @@ def collect_metrics():
     
     try:
         # Выполняем команду внутри контейнера
+        print("Выполняем команду: docker exec amnezia-awg wg show all dump")
         output = subprocess.check_output(
             ['docker', 'exec', 'amnezia-awg', 'wg', 'show', 'all', 'dump'],
             stderr=subprocess.STDOUT
         ).decode('utf-8').strip()
 
+        print(f"Получен вывод ({len(output)} символов)")
         lines = output.splitlines()
+        print(f"Количество строк: {len(lines)}")
 
         current_interface = None
+        peers_found = 0
 
         for line in lines:
             if not line.strip():
@@ -80,6 +84,8 @@ def collect_metrics():
                 # Получаем имя клиента
                 client_name = get_client_name(public_key, peer_names)
 
+                print(f"Обработка пира: {client_name} (interface={interface}, rx={rx_bytes}, tx={tx_bytes})")
+
                 # Устанавливаем метрики
                 received_bytes.labels(
                     interface=interface,
@@ -101,10 +107,14 @@ def collect_metrics():
                     client_name=client_name
                 ).set(handshake_time)
 
+                peers_found += 1
+
             except (IndexError, ValueError) as e:
                 print(f"Ошибка парсинга строки: {line.strip()}")
                 print(f"Причина: {e}")
                 continue
+
+        print(f"Обработано пиров: {peers_found}")
 
     except subprocess.CalledProcessError as e:
         print(f"Ошибка выполнения команды docker exec: {e}")
@@ -112,6 +122,8 @@ def collect_metrics():
             print(e.output.decode('utf-8', errors='replace'))
     except Exception as e:
         print(f"Неожиданная ошибка при сборе метрик: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == '__main__':

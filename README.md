@@ -84,6 +84,69 @@ sudo systemctl start awg-exporter
 sudo journalctl -u awg-exporter -f
 ```
 
+## Диагностика проблем
+
+### 1. Проверьте что экспортер отдает метрики
+
+```bash
+curl http://localhost:9586/metrics | grep awg_
+```
+
+Должны быть строки вида:
+```
+awg_sent_bytes{client_name="Client1",interface="awg0",public_key="..."} 12345.0
+awg_received_bytes{client_name="Client1",interface="awg0",public_key="..."} 67890.0
+```
+
+### 2. Проверьте логи экспортера
+
+```bash
+sudo journalctl -u awg-exporter -f
+```
+
+Должны быть сообщения:
+```
+Выполняем команду: docker exec amnezia-awg wg show all dump
+Получен вывод (XXX символов)
+Количество строк: X
+Обработка пира: Client_Name (interface=awg0, rx=..., tx=...)
+Обработано пиров: X
+```
+
+### 3. Проверьте имя контейнера
+
+```bash
+docker ps | grep amnezia
+```
+
+Если контейнер называется по-другому (например `amnezia-wg` вместо `amnezia-awg`), отредактируйте `/opt/awg-exporter/exporter.py`:
+
+```python
+['docker', 'exec', 'ваше_имя_контейнера', 'wg', 'show', 'all', 'dump'],
+```
+
+### 4. Проверьте команду wg внутри контейнера
+
+```bash
+docker exec amnezia-awg wg show all dump
+```
+
+Должен быть вывод с табуляцией между полями.
+
+### 5. Если используется awg вместо wg
+
+Некоторые версии AmneziaWG используют команду `awg` вместо `wg`. Отредактируйте `/opt/awg-exporter/exporter.py`:
+
+```python
+['docker', 'exec', 'amnezia-awg', 'awg', 'show', 'all', 'dump'],
+```
+
+### 6. Проверьте что Prometheus собирает метрики
+
+В Prometheus UI (обычно http://localhost:9090):
+- Status → Targets — должен быть target `amneziawg` со статусом UP
+- Graph → введите `awg_sent_bytes` — должны появиться метрики
+
 ## Prometheus конфигурация
 
 Добавьте в `prometheus.yml`:
