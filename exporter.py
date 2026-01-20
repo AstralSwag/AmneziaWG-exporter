@@ -25,21 +25,38 @@ latest_handshake = Gauge(
 
 def load_peer_names(config_file='peer_names.json'):
     """Загружает маппинг публичных ключей на имена пиров"""
+    # Если путь относительный, ищем в директории скрипта
+    if not os.path.isabs(config_file):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        config_file = os.path.join(script_dir, config_file)
+    
+    print(f"Загрузка конфигурации из: {config_file}")
+    
     if os.path.exists(config_file):
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                peer_names = json.load(f)
+                print(f"Загружено имен пиров: {len(peer_names)}")
+                for key, name in peer_names.items():
+                    print(f"  {key[:16]}... -> {name}")
+                return peer_names
         except Exception as e:
             print(f"Ошибка загрузки конфигурации имен пиров: {e}")
             return {}
+    else:
+        print(f"Файл {config_file} не найден, используются дефолтные имена")
     return {}
 
 def get_client_name(public_key, peer_names):
     """Возвращает имя клиента по публичному ключу или сокращенный ключ"""
     if public_key in peer_names:
-        return peer_names[public_key]
+        name = peer_names[public_key]
+        print(f"  Найдено имя для ключа {public_key[:16]}...: {name}")
+        return name
     # Если имя не задано, возвращаем первые 8 символов ключа
-    return public_key[:8] if len(public_key) > 8 else public_key
+    short_name = public_key[:8] if len(public_key) > 8 else public_key
+    print(f"  Имя не найдено для ключа {public_key[:16]}..., используем: {short_name}")
+    return short_name
 
 def collect_metrics():
     peer_names = load_peer_names()
