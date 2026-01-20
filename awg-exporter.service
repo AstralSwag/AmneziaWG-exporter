@@ -1,0 +1,15 @@
+[Unit]
+Description=AmneziaWG Prometheus Exporter
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/awg-exporter
+ExecStart=/usr/bin/python3 /opt/awg-exporter/exporter.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
