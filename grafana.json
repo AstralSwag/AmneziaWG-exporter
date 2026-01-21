@@ -380,7 +380,7 @@
               }
             ]
           },
-          "unit": "decbytes"
+          "unit": "Bps"
         },
         "overrides": []
       },
@@ -415,7 +415,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "increase(awg_sent_bytes_total[$__rate_interval]) != 0",
+          "expr": "awg_sent_rate_bytes_per_sec > 0",
           "instant": false,
           "legendFormat": "Sent {{client_name}}",
           "range": true,
@@ -428,7 +428,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "increase(awg_received_bytes_total[$__rate_interval]) != 0",
+          "expr": "awg_received_rate_bytes_per_sec > 0",
           "format": "time_series",
           "hide": false,
           "instant": false,

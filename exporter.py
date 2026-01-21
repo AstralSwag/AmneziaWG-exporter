@@ -17,11 +17,27 @@ sent_bytes = Gauge(
     ['interface', 'public_key', 'client_name']
 )
 
+# Метрики скорости (байт/сек)
+received_rate = Gauge(
+    'awg_received_rate_bytes_per_sec',
+    'Скорость получения данных в байтах в секунду',
+    ['interface', 'public_key', 'client_name']
+)
+
+sent_rate = Gauge(
+    'awg_sent_rate_bytes_per_sec',
+    'Скорость отправки данных в байтах в секунду',
+    ['interface', 'public_key', 'client_name']
+)
+
 latest_handshake = Gauge(
     'awg_latest_handshake_seconds',
     'Время последнего handshake в секундах с эпохи (0 если не было)',
     ['interface', 'public_key', 'client_name']
 )
+
+# Словарь для хранения предыдущих значений и времени
+previous_data = {}
 
 def load_peer_names(config_file='peer_names.json'):
     """Загружает маппинг публичных ключей на имена пиров"""
@@ -59,7 +75,9 @@ def get_client_name(public_key, peer_names):
     return short_name
 
 def collect_metrics():
+    global previous_data
     peer_names = load_peer_names()
+    current_time = time.time()
     
     try:
         # Выполняем команду внутри контейнера
@@ -103,7 +121,10 @@ def collect_metrics():
 
                 print(f"Обработка пира: {client_name} (interface={interface}, rx={rx_bytes}, tx={tx_bytes})")
 
-                # Устанавливаем метрики
+                # Ключ для хранения предыдущих данных
+                peer_key = f"{interface}:{public_key}"
+
+                # Устанавливаем метрики общих байт
                 received_bytes.labels(
                     interface=interface,
                     public_key=public_key,
@@ -115,6 +136,52 @@ def collect_metrics():
                     public_key=public_key,
                     client_name=client_name
                 ).set(tx_bytes)
+
+                # Рассчитываем скорость
+                if peer_key in previous_data:
+                    prev_time = previous_data[peer_key]['time']
+                    prev_rx = previous_data[peer_key]['rx_bytes']
+                    prev_tx = previous_data[peer_key]['tx_bytes']
+                    
+                    time_diff = current_time - prev_time
+                    
+                    if time_diff > 0:
+                        rx_rate = max(0, (rx_bytes - prev_rx) / time_diff)
+                        tx_rate = max(0, (tx_bytes - prev_tx) / time_diff)
+                        
+                        received_rate.labels(
+                            interface=interface,
+                            public_key=public_key,
+                            client_name=client_name
+                        ).set(rx_rate)
+                        
+                        sent_rate.labels(
+                            interface=interface,
+                            public_key=public_key,
+                            client_name=client_name
+                        ).set(tx_rate)
+                        
+                        print(f"  Скорость: RX={rx_rate:.2f} B/s, TX={tx_rate:.2f} B/s")
+                else:
+                    # Первый запуск - устанавливаем скорость в 0
+                    received_rate.labels(
+                        interface=interface,
+                        public_key=public_key,
+                        client_name=client_name
+                    ).set(0)
+                    
+                    sent_rate.labels(
+                        interface=interface,
+                        public_key=public_key,
+                        client_name=client_name
+                    ).set(0)
+
+                # Сохраняем текущие данные для следующего расчета
+                previous_data[peer_key] = {
+                    'time': current_time,
+                    'rx_bytes': rx_bytes,
+                    'tx_bytes': tx_bytes
+                }
 
                 # latest handshake: если 0 — значит handshake не происходил
                 handshake_time = int(latest_hs) if latest_hs != '0' else 0

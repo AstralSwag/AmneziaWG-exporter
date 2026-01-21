@@ -1,6 +1,11 @@
 # AmneziaWG Prometheus Exporter
 
 Экспортер метрик AmneziaWG для Prometheus с поддержкой пользовательских имен клиентов.
+Работает с AmneziaVPN, размещённой на сервере в контейнере при помощи официального клиентского приложения. Экспортер заходит в контейнер amnezia-awg, выполняет команду
+```bash
+wg show all dump
+```
+и формирует метрики.
 
 ## Установка
 
@@ -17,6 +22,7 @@ sudo ./install.sh
 ```bash
 pip3 install prometheus-client
 ```
+Может ругаться на остутствие виртуального окружения. В этом случае либо активировать venv, либо запускать установку с флагом --break-system-packages. Автоматическая установка запускается как раз с таким флагом.
 
 2. Создайте директорию и скопируйте файлы:
 ```bash
@@ -32,6 +38,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable awg-exporter.service
 sudo systemctl start awg-exporter.service
 ```
+Сервис запускается из /opt/awg-exporter, так что имя директории важно. Либо поменяйте директорию в файле сервиса
 
 ## Настройка имен клиентов
 
@@ -159,11 +166,6 @@ scrape_configs:
 ```
 
 ## Grafana Dashboard
-
-Есть два варианта дашборда:
-
-1. **grafana-simple.json** - упрощенный дашборд для тестирования (рекомендуется начать с него)
-2. **grafana.json** - полный дашборд со всеми метриками
 
 Импортируйте дашборд в Grafana:
 1. Grafana UI → Dashboards → Import
