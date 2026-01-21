@@ -176,7 +176,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "delta(awg_sent_bytes[$__range]) != 0",
+          "expr": "increase(awg_sent_bytes_total[$__range]) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -244,7 +244,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "delta(awg_sent_bytes[$__range]) != 0",
+          "expr": "increase(awg_sent_bytes_total[$__range]) != 0",
           "legendFormat": "{{client_name}}",
           "range": true,
           "refId": "A"
@@ -415,7 +415,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rate(awg_sent_bytes[$__rate_interval]) != 0",
+          "expr": "increase(awg_sent_bytes_total[$__rate_interval]) != 0",
           "instant": false,
           "legendFormat": "Sent {{client_name}}",
           "range": true,
@@ -428,7 +428,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rate(awg_received_bytes[$__rate_interval]) != 0",
+          "expr": "increase(awg_received_bytes_total[$__rate_interval]) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -509,7 +509,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "awg_sent_bytes",
+          "expr": "awg_sent_bytes_total",
           "legendFormat": "{{client_name}}",
           "range": true,
           "refId": "A"
@@ -583,7 +583,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "awg_sent_bytes != 0",
+          "expr": "awg_sent_bytes_total != 0",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -662,7 +662,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "awg_sent_bytes == 0",
+              "expr": "awg_sent_bytes_total == 0",
               "legendFormat": "{{client_name}}",
               "range": true,
               "refId": "A"
