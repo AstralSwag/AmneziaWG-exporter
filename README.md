@@ -1,48 +1,50 @@
 # AmneziaWG Prometheus Exporter
 
-Экспортер метрик AmneziaWG для Prometheus с поддержкой пользовательских имен клиентов.
-Работает с AmneziaVPN, размещённой на сервере в контейнере при помощи официального клиентского приложения. Экспортер заходит в контейнер amnezia-awg, выполняет команду
+AmneziaWG metrics exporter for Prometheus with support for custom client names.
+Works with AmneziaVPN deployed on a server in a container using the official client application. The exporter connects to the amnezia-awg container, executes the command
 ```bash
 wg show all dump
 ```
-и формирует метрики.
+and generates metrics.
 
-## Установка
+The repository also includes a ready-to-use docker-compose file for running Prometheus and Grafana locally. Start it with docker compose up -d if needed
 
-### Автоматическая установка
+## Installation
+
+### Automatic Installation
 
 ```bash
 chmod +x install.sh
 sudo ./install.sh
 ```
 
-### Ручная установка
+### Manual Installation
 
-1. Установите зависимости:
+1. Install dependencies:
 ```bash
 pip3 install prometheus-client
 ```
-Может ругаться на остутствие виртуального окружения. В этом случае либо активировать venv, либо запускать установку с флагом --break-system-packages. Автоматическая установка запускается как раз с таким флагом.
+May complain about missing virtual environment. In this case, either activate venv or run installation with --break-system-packages flag. Automatic installation runs with this flag.
 
-2. Создайте директорию и скопируйте файлы:
+2. Create directory and copy files:
 ```bash
 sudo mkdir -p /opt/awg-exporter
 sudo cp exporter.py /opt/awg-exporter/
 sudo cp peer_names.json /opt/awg-exporter/
 ```
 
-3. Установите systemd сервис:
+3. Install systemd service:
 ```bash
 sudo cp awg-exporter.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable awg-exporter.service
 sudo systemctl start awg-exporter.service
 ```
-Сервис запускается из /opt/awg-exporter, так что имя директории важно. Либо поменяйте директорию в файле сервиса
+The service runs from /opt/awg-exporter, so the directory name is important. Alternatively, change the directory in the service file
 
-## Настройка имен клиентов
+## Client Names Configuration
 
-Отредактируйте файл `/opt/awg-exporter/peer_names.json`:
+Edit the file `/opt/awg-exporter/peer_names.json`:
 
 ```json
 {
@@ -52,111 +54,111 @@ sudo systemctl start awg-exporter.service
 }
 ```
 
-Где `PUBLIC_KEY_CLIENT_X` - это публичный ключ пира из WireGuard.
+Where `PUBLIC_KEY_CLIENT_X` is the peer's public key from WireGuard.
 
-После изменения файла перезапустите сервис:
+After changing the file, restart the service:
 ```bash
 sudo systemctl restart awg-exporter
 ```
 
-## Метрики
+## Metrics
 
-Экспортер предоставляет следующие метрики:
+The exporter provides the following metrics:
 
-- `awg_received_bytes` - количество полученных байт от пира
-- `awg_sent_bytes` - количество отправленных байт пиру
-- `awg_latest_handshake_seconds` - время последнего handshake (unix timestamp)
+- `awg_received_bytes` - number of bytes received from peer
+- `awg_sent_bytes` - number of bytes sent to peer
+- `awg_latest_handshake_seconds` - time of last handshake (unix timestamp)
 
-Все метрики имеют лейблы:
-- `interface` - имя интерфейса (например, wg0)
-- `public_key` - публичный ключ пира
-- `client_name` - имя клиента (из peer_names.json или первые 8 символов ключа)
+All metrics have labels:
+- `interface` - interface name (e.g., wg0)
+- `public_key` - peer's public key
+- `client_name` - client name (from peer_names.json or first 8 characters of key)
 
-## Управление сервисом
+## Service Management
 
 ```bash
-# Проверить статус
+# Check status
 sudo systemctl status awg-exporter
 
-# Перезапустить
+# Restart
 sudo systemctl restart awg-exporter
 
-# Остановить
+# Stop
 sudo systemctl stop awg-exporter
 
-# Запустить
+# Start
 sudo systemctl start awg-exporter
 
-# Посмотреть логи
+# View logs
 sudo journalctl -u awg-exporter -f
 ```
 
-## Диагностика проблем
+## Troubleshooting
 
-### 1. Проверьте что экспортер отдает метрики
+### 1. Check that the exporter provides metrics
 
 ```bash
 curl http://localhost:9586/metrics | grep awg_
 ```
 
-Должны быть строки вида:
+You should see lines like:
 ```
 awg_sent_bytes{client_name="Client1",interface="awg0",public_key="..."} 12345.0
 awg_received_bytes{client_name="Client1",interface="awg0",public_key="..."} 67890.0
 ```
 
-### 2. Проверьте логи экспортера
+### 2. Check exporter logs
 
 ```bash
 sudo journalctl -u awg-exporter -f
 ```
 
-Должны быть сообщения:
+You should see messages like:
 ```
-Выполняем команду: docker exec amnezia-awg wg show all dump
-Получен вывод (XXX символов)
-Количество строк: X
-Обработка пира: Client_Name (interface=awg0, rx=..., tx=...)
-Обработано пиров: X
+Executing command: docker exec amnezia-awg wg show all dump
+Received output (XXX characters)
+Number of lines: X
+Processing peer: Client_Name (interface=awg0, rx=..., tx=...)
+Processed peers: X
 ```
 
-### 3. Проверьте имя контейнера
+### 3. Check container name
 
 ```bash
 docker ps | grep amnezia
 ```
 
-Если контейнер называется по-другому (например `amnezia-wg` вместо `amnezia-awg`), отредактируйте `/opt/awg-exporter/exporter.py`:
+If the container has a different name (e.g., `amnezia-wg` instead of `amnezia-awg`), edit `/opt/awg-exporter/exporter.py`:
 
 ```python
-['docker', 'exec', 'ваше_имя_контейнера', 'wg', 'show', 'all', 'dump'],
+['docker', 'exec', 'your_container_name', 'wg', 'show', 'all', 'dump'],
 ```
 
-### 4. Проверьте команду wg внутри контейнера
+### 4. Check wg command inside container
 
 ```bash
 docker exec amnezia-awg wg show all dump
 ```
 
-Должен быть вывод с табуляцией между полями.
+You should get output with tabs between fields.
 
-### 5. Если используется awg вместо wg
+### 5. If awg is used instead of wg
 
-Некоторые версии AmneziaWG используют команду `awg` вместо `wg`. Отредактируйте `/opt/awg-exporter/exporter.py`:
+Some versions of AmneziaWG use the `awg` command instead of `wg`. Edit `/opt/awg-exporter/exporter.py`:
 
 ```python
 ['docker', 'exec', 'amnezia-awg', 'awg', 'show', 'all', 'dump'],
 ```
 
-### 6. Проверьте что Prometheus собирает метрики
+### 6. Check that Prometheus collects metrics
 
-В Prometheus UI (обычно http://localhost:9090):
-- Status → Targets — должен быть target `amneziawg` со статусом UP
-- Graph → введите `awg_sent_bytes` — должны появиться метрики
+In Prometheus UI (usually http://localhost:9090):
+- Status → Targets — there should be a target `amneziawg` with UP status
+- Graph → enter `awg_sent_bytes` — metrics should appear
 
-## Prometheus конфигурация
+## Prometheus Configuration
 
-Добавьте в `prometheus.yml`:
+Add to `prometheus.yml`:
 
 ```yaml
 scrape_configs:
@@ -167,30 +169,12 @@ scrape_configs:
 
 ## Grafana Dashboard
 
-Импортируйте дашборд в Grafana:
+Import the dashboard into Grafana:
 1. Grafana UI → Dashboards → Import
-2. Загрузите файл `grafana-simple.json` или `grafana.json`
-3. Выберите ваш Prometheus datasource
-4. Нажмите Import
+2. Upload the `grafana.json` file
+3. Select your Prometheus datasource
+4. Click Import
 
-### Если дашборд не показывает данные
+## Port
 
-1. **Проверьте что метрики есть в Prometheus:**
-   - Откройте Prometheus UI (обычно http://your-server:9090)
-   - В поле запроса введите: `awg_sent_bytes`
-   - Нажмите Execute
-   - Должны появиться метрики с вашими клиентами
-
-2. **Проверьте временной диапазон:**
-   - Если данные только начали собираться, выберите "Last 5 minutes" в Grafana
-   - Функции `delta()` и `rate()` требуют минимум 2 точки данных
-
-3. **Проверьте UID datasource:**
-   - Если в дашборде ошибка "datasource not found"
-   - Откройте `grafana.json` или `grafana-simple.json`
-   - Замените `"uid": "prometheus"` на UID вашего datasource
-   - Или при импорте выберите нужный datasource из списка
-
-## Порт
-
-По умолчанию экспортер слушает на порту `9586`.
+By default, the exporter listens on port `9586`.

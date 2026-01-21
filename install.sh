@@ -1,59 +1,59 @@
 #!/bin/bash
 
-# Скрипт установки AmneziaWG Exporter как systemd сервиса
+# AmneziaWG Exporter installation script as systemd service
 
 set -e
 
-echo "Установка AmneziaWG Exporter..."
+echo "Installing AmneziaWG Exporter..."
 
-# Проверка прав root
+# Check root privileges
 if [ "$EUID" -ne 0 ]; then 
-    echo "Пожалуйста, запустите скрипт с правами root (sudo)"
+    echo "Please run the script with root privileges (sudo)"
     exit 1
 fi
 
-# Установка зависимостей
-echo "Установка зависимостей Python..."
+# Install dependencies
+echo "Installing Python dependencies..."
 pip3 install prometheus-client --break-system-packages # Without venv
 
-# Создание директории
-echo "Создание директории /opt/awg-exporter..."
+# Create directory
+echo "Creating directory /opt/awg-exporter..."
 mkdir -p /opt/awg-exporter
 
-# Копирование файлов
-echo "Копирование файлов..."
+# Copy files
+echo "Copying files..."
 cp exporter.py /opt/awg-exporter/
 cp peer_names.json /opt/awg-exporter/
 
-# Установка прав
+# Set permissions
 chmod +x /opt/awg-exporter/exporter.py
 
-# Копирование systemd unit файла
-echo "Установка systemd сервиса..."
+# Copy systemd unit file
+echo "Installing systemd service..."
 cp awg-exporter.service /etc/systemd/system/
 
-# Перезагрузка systemd
+# Reload systemd
 systemctl daemon-reload
 
-# Включение и запуск сервиса
-echo "Запуск сервиса..."
+# Enable and start service
+echo "Starting service..."
 systemctl enable awg-exporter.service
 systemctl start awg-exporter.service
 
-# Проверка статуса
+# Check status
 echo ""
-echo "Статус сервиса:"
+echo "Service status:"
 systemctl status awg-exporter.service --no-pager
 
 echo ""
-echo "Установка завершена!"
-echo "Метрики доступны на http://localhost:9586/metrics"
+echo "Installation completed!"
+echo "Metrics available at http://localhost:9586/metrics"
 echo ""
-echo "Полезные команды:"
-echo "  systemctl status awg-exporter   - проверить статус"
-echo "  systemctl restart awg-exporter  - перезапустить"
-echo "  systemctl stop awg-exporter     - остановить"
-echo "  journalctl -u awg-exporter -f   - смотреть логи"
+echo "Useful commands:"
+echo "  systemctl status awg-exporter   - check status"
+echo "  systemctl restart awg-exporter  - restart"
+echo "  systemctl stop awg-exporter     - stop"
+echo "  journalctl -u awg-exporter -f   - view logs"
 echo ""
-echo "Не забудьте отредактировать /opt/awg-exporter/peer_names.json"
-echo "для добавления имен ваших пиров!"
+echo "Don't forget to edit /opt/awg-exporter/peer_names.json"
+echo "to add names for your peers!"
