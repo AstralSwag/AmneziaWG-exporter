@@ -4,15 +4,15 @@ import json
 import os
 from prometheus_client import start_http_server, Gauge
 
-# Метрики Prometheus
+# Метрики Prometheus - используем Gauge с _total суффиксом для имитации Counter
 received_bytes = Gauge(
-    'awg_received_bytes',
+    'awg_received_bytes_total',
     'Общее количество полученных байт от пира',
     ['interface', 'public_key', 'client_name']
 )
 
 sent_bytes = Gauge(
-    'awg_sent_bytes',
+    'awg_sent_bytes_total',
     'Общее количество отправленных байт пиру',
     ['interface', 'public_key', 'client_name']
 )

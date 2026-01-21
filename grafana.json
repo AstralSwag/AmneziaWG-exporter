@@ -103,7 +103,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(awg_sent_bytes)",
+          "expr": "sum(awg_sent_bytes_total)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
