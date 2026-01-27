@@ -39,20 +39,56 @@ latest_handshake = Gauge(
 # Dictionary for storing previous values and time
 previous_data = {}
 
-def load_peer_names(config_file='peer_names.json'):
-    """Loads mapping of public keys to peer names"""
+def load_peer_names_from_container():
+    """Loads mapping of public keys to peer names from amnezia-awg container"""
+    try:
+        print("Loading client names from amnezia-awg container...")
+        output = subprocess.check_output(
+            ['docker', 'exec', 'amnezia-awg', 'cat', '/opt/amnezia/awg/clientsTable'],
+            stderr=subprocess.STDOUT
+        ).decode('utf-8').strip()
+        
+        clients_data = json.loads(output)
+        peer_names = {}
+        
+        for client in clients_data:
+            client_id = client.get('clientId', '')
+            user_data = client.get('userData', {})
+            client_name = user_data.get('clientName', '')
+            
+            if client_id and client_name:
+                peer_names[client_id] = client_name
+                print(f"  {client_id[:16]}... -> {client_name}")
+        
+        print(f"Loaded {len(peer_names)} client names from container")
+        return peer_names
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error reading clientsTable from container: {e}")
+        if e.output:
+            print(e.output.decode('utf-8', errors='replace'))
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Error parsing clientsTable JSON: {e}")
+        return {}
+    except Exception as e:
+        print(f"Unexpected error loading client names from container: {e}")
+        return {}
+
+def load_peer_names_from_file(config_file='peer_names.json'):
+    """Loads mapping of public keys to peer names from local file (fallback)"""
     # If path is relative, look in script directory
     if not os.path.isabs(config_file):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         config_file = os.path.join(script_dir, config_file)
     
-    print(f"Loading configuration from: {config_file}")
+    print(f"Loading fallback configuration from: {config_file}")
     
     if os.path.exists(config_file):
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
                 peer_names = json.load(f)
-                print(f"Loaded peer names: {len(peer_names)}")
+                print(f"Loaded fallback peer names: {len(peer_names)}")
                 for key, name in peer_names.items():
                     print(f"  {key[:16]}... -> {name}")
                 return peer_names
@@ -60,8 +96,20 @@ def load_peer_names(config_file='peer_names.json'):
             print(f"Error loading peer names configuration: {e}")
             return {}
     else:
-        print(f"File {config_file} not found, using default names")
+        print(f"Fallback file {config_file} not found")
     return {}
+
+def load_peer_names():
+    """Loads peer names, first trying container, then fallback to local file"""
+    # Try to load from container first
+    peer_names = load_peer_names_from_container()
+    
+    # If container method failed or returned empty, try fallback file
+    if not peer_names:
+        print("Container method failed, trying fallback file...")
+        peer_names = load_peer_names_from_file()
+    
+    return peer_names
 
 def get_client_name(public_key, peer_names):
     """Returns client name by public key or shortened key"""

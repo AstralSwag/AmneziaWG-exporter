@@ -1,4 +1,4 @@
 scrape_configs:
   - job_name: 'amneziawg'
     static_configs:
-      - targets: ['localhost:9586']
+      - targets: ['172.17.0.1:9586'] # docker0 interface IP to access localhost:9589
