@@ -1,4 +1,5 @@
 # AmneziaWG Prometheus Exporter
+<img width="1717" height="690" alt="image" src="https://github.com/user-attachments/assets/6f1b801e-6109-4208-a1a8-dbd9877ef5a4" />
 
 AmneziaWG metrics exporter for Prometheus with support for custom client names.
 Works with AmneziaVPN deployed on a server in a container using the official client application. The exporter connects to the amnezia-awg container, executes the command
